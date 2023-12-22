@@ -3,10 +3,16 @@
 namespace App\Http\Controllers;
 
 use App\Models\Post;
+use App\Models\Post_Categories;
+use App\Models\Category;
 use Illuminate\Http\Request;
 
 class PostController extends Controller
 {
+
+    public function index(){
+        return view('index');
+    }
 
     public function updatePost(Post $post, Request $req){
         $incomingFields = $req->validate([
@@ -38,18 +44,28 @@ class PostController extends Controller
         $incomingFields = $req->validate([
             'title' => 'required',
             'body' => 'required',
+            'category' => 'required',
         ]);
 
-        $incomingFields['title'] = strip_tags($incomingFields['title']);
-        $incomingFields['body'] = strip_tags($incomingFields['body']);
-        $incomingFields['user_id'] = auth()->id();
-        $incomingFields['author'] = auth()->user()->username;
+        $post = new Post;
+        $post->title = strip_tags($incomingFields['title']);
+        $post->body = strip_tags($incomingFields['body']);
+        $post->user_id = auth()->id();
+        $post->author = auth()->user()->username;
+        $post->save();
 
-        $post = Post::create($incomingFields);
-        return redirect('/');
+        foreach ($req->input('category') as $category) {
+            Post_Categories::create([
+                'post_id' => $post->id,
+                'category_id' => $category,
+            ]);
+        }
+        
+        return redirect('/')->with('success','Blog Created Successfully');
     }
 
     public function creatingPost(){
         return view('creating-post');
     }
 }
+
